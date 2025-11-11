@@ -2,7 +2,7 @@
 variable "proxmox_api_url" {
   description = "URL de la API de Proxmox"
   type        = string
-  default     = "https://proxmox.rlab.lat:8006/api2/json"
+  sensitive   = true
 }
 
 variable "proxmox_api_token_id" {
@@ -33,7 +33,7 @@ variable "proxmox_debug" {
 variable "vm_name" {
   description = "Nombre de la máquina virtual"
   type        = string
-  sensitive   = true
+  default     = "testing"
 }
 
 variable "vm_id" {
@@ -42,10 +42,9 @@ variable "vm_id" {
   default     = 200
 }
 
-variable "target_node" {
+variable "proxmox_node_name" {
   description = "Nodo de Proxmox donde crear la VM"
   type        = string
-  default     = "pve"
 }
 
 variable "vm_cores" {

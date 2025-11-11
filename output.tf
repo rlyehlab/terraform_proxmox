@@ -15,5 +15,5 @@ output "vm_name" {
 
 output "vm_status" {
   description = "Estado de la VM"
-  value       = proxmox_vm_qemu.terraform_vm.status
+  value       = proxmox_vm_qemu.terraform_vm.vm_state
 }
