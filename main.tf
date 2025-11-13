@@ -1,37 +1,36 @@
-# Crear una máquina virtual en Proxmox
-resource "proxmox_vm_qemu" "terraform_vm" {
+# https://registry.terraform.io/providers/bpg/proxmox/latest/docs/guides/clone-vm
+resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
+  description = "Managed by proxmox"
   name        = var.vm_name
-  vmid        = var.vm_id
-  target_node = var.proxmox_node_name
-  description = "VM creada con Terraform"
+  node_name   = var.proxmox_node_name
+  vm_id       = var.vm_id
 
-  # Configuración de hardware
-  cpu {
-    cores = var.vm_cores
-    type  = "host"
+  stop_on_destroy = true
+  agent {
+    # NOTE: The agent is installed and enabled as part of the cloud-init configuration in the template VM, see cloud-config.tf
+    # The working agent is *required* to retrieve the VM IP addresses.
+    # If you are using a different cloud-init configuration, or a different clone source
+    # that does not have the qemu-guest-agent installed, you may need to disable the `agent` below and remove the `vm_ipv4_address` output.
+    # See https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm#qemu-guest-agent for more details.
+    enabled = true
   }
-  memory  = var.vm_memory
-  agent   = 0
-  os_type = "cloud-init"
 
-  # Configuración de red
-  network {
-    model  = "virtio"
-    bridge = var.network_bridge
-    id     = 0
+  clone {
+    vm_id = 6009
   }
-  # Configuración de cloud-init 
-  #  ciuser     = var.user_id
-  #  cipassword = var.user_pass
-  sshkeys = <<EOF
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCGeLU9MtiXkJkNIP1ZEU/bbnPD3yB80w0yA4PxEvdih8nqWLHO/4jO4wSi3gDN/AwDAPry6AeY401bgdnP0y8pG63xMQyx/qS2yp4089mUJ37jorG8CEge1WObk2e3Sm0dux+c2SI3vKNN1y3sq1vhmFg4QkvgnIfb9p9KX1lvGjhfT1piR7OORaHR15GVcS1Yu5a1d6UzPr+5E1j/oT+amloeInjlLqneRK1PwDz46oSj90QAnv8pXuu5YvzYlKp+B3Dk0j+CWQ6cSY0T0PgTvBdRGXMzjZNfQZQX67a1Ave7hYC2PWB9UqmFMUvfh5XZMs21CzfHIWDoys/f1KH1/JykL/Q/5aYh9OhNATtdLs79O96ZLu1A0Ltlt6vaDfy+1T2FtCLQVmIqsczdvFZKi6aD+jgTTEZ/KrSNykm93VvwfCBQZyASYtM3HNPwRZPWtSj2KfA8XlixxGyBnyjb5KHwAm3YaXzId1m5kzNBdQ8kcWBHgMpLAref9KcBawjXzV2Yh4BdHceWe/e8+083oFnolfIWvLXyxtPNb3qUf0Ri8rMJN2nwOjcQ/SFQTme8CEDllvisZWGY0BIjO7HTXXXa+nAlMCgk1a/16duds1yTXEZ+olCB5zM2fsuu5tY7bLUR0YbqjEzkW1jm5/f0beEP2cvWLkzdrgeNSYT5lw== caripa.front@gmail.com
-EOF
+  # if agent is not enabled, the VM may not be able to shutdown properly, and may need to be forced off
+  memory {
+    dedicated = 2048
+  }
 
-  lifecycle {
-    ignore_changes = [
-      network,
-      disk
-    ]
+  initialization {
+    dns {
+      servers = ["1.1.1.1"]
+    }
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
   }
 }
-
