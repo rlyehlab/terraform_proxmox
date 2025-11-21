@@ -5,6 +5,10 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
   node_name   = var.proxmox_node_name
   vm_id       = var.vm_id
 
+  cpu {
+    cores = var.cores
+  }
+  
   stop_on_destroy = true
   agent {
     # NOTE: The agent is installed and enabled as part of the cloud-init configuration in the template VM, see cloud-config.tf
@@ -20,7 +24,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
   }
   # if agent is not enabled, the VM may not be able to shutdown properly, and may need to be forced off
   memory {
-    dedicated = 2048
+    dedicated = var.memory
   }
 
   initialization {
