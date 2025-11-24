@@ -22,9 +22,10 @@ variable "node_name" {
 
 variable "testing" {
   type = object({
-    name    = string
-    memory  = number
-    id      = number
-    cores   = number
+    name      = string
+    memory    = number
+    id        = number
+    cores     = number
+    disk_size = number
   })
 }

@@ -6,5 +6,6 @@ module "testing" {
   memory            = var.testing.memory
   vm_id             = var.testing.id
   cores             = var.testing.cores
+  disk_size         = var.testing.disk_size
   password          = var.password
 }
