@@ -26,7 +26,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
     disk {
     datastore_id = var.datastore_id
     interface    = "virtio0"
-    size         = var.disk_sizes
+    size         = var.disk_size
     file_format  = "raw"
     discard      = "on"
     ssd          = true
