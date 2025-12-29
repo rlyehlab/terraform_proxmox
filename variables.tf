@@ -10,17 +10,27 @@ variable "proxmox_api_token" {
 }
 
 variable "password" {
-    description = "VM password"
-    type = string
+  description = "VM password"
+  type        = string
 }
 
 variable "node_name" {
-    description = "Nombre del nodo donde vive la vm"
-    type = string
-    default = "dunwitch"
+  description = "Nombre del nodo donde vive la vm"
+  type        = string
+  default     = "dunwitch"
 }
 
 variable "testing" {
+  type = object({
+    name      = string
+    memory    = number
+    id        = number
+    cores     = number
+    disk_size = number
+  })
+}
+
+variable "calacuta" {
   type = object({
     name      = string
     memory    = number
