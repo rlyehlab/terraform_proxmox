@@ -7,7 +7,7 @@ terraform {
   }
   backend "s3" {
     bucket         = "rlab-tfstate"
-    key            = "proxmox/infra/terraform.tfstate"
+    key            = "proxmox/dunwitch/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true
   }
