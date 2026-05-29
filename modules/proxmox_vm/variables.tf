@@ -45,10 +45,21 @@ variable "template_map" {
   type = map(number)
   default = {
     ubuntu = 6009
+    debian = 6010
   }
 }
 
 variable "template_name" {
   type    = string
   default = "ubuntu"
+}
+
+variable "on_boot" {
+  type    = bool
+  default = true
+}
+
+variable "started" {
+  type    = bool
+  default = true
 }

@@ -4,6 +4,8 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
   name        = var.vm_name
   node_name   = var.proxmox_node_name
   vm_id       = var.vm_id
+  on_boot     = var.on_boot
+  started     = var.started
 
   cpu {
     cores = var.cores
