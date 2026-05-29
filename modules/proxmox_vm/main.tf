@@ -15,8 +15,8 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
   }
 
   clone {
-    vm_id = 6009
-  full  = true
+    vm_id = var.template_map[var.template_name]
+    full  = true
   }
 
   memory {

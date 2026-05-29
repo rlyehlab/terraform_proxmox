@@ -1,14 +1,3 @@
-# Variables de autenticación
-# variable "proxmox_api_url" {
-#   description = "URL de la API de Proxmox"
-#   type        = string
-#   sensitive   = true
-# }
-# variable "proxmox_api_token" {
-#   description = "id=secret"
-#   type        = string
-#   sensitive   = true
-# }
 variable "password" {
   description = "user password "
   type        = string
@@ -50,4 +39,16 @@ variable "disk_size" {
   description = "Disk size in GB"
   type        = number
   default     = 16
+}
+
+variable "template_map" {
+  type = map(number)
+  default = {
+    ubuntu = 6009
+  }
+}
+
+variable "template_name" {
+  type    = string
+  default = "ubuntu"
 }
