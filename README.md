@@ -26,6 +26,7 @@ cloud init es basicamente un agente que nos ayuda a configurar el init de las nu
 vamos a utilizar [bpg/proxmox](https://registry.terraform.io/providers/bpg/proxmox/)
 el de telmate/proxmox es una poronga.
 
+1. El backend (donde vive el tfstate) esta en un s3 de amazon, para eso se necesitan credenciales del awscli. Checkear con Admin
 
 1. terraform 
 ```zsh
@@ -34,7 +35,7 @@ terraform init
 terraform fmt 
 
 terraform validate
-
+## Usado aut.tfvars no es necesario pasar el flag -var-file
 terraform plan -out=plan.tfplan -var-file="env.tfvars"
 
 terraform apply "plan.tfplan"
