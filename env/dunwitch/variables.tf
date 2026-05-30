@@ -22,10 +22,12 @@ variable "node_name" {
 
 variable "testing" {
   type = object({
-    name      = string
-    memory    = number
-    id        = number
-    cores     = number
-    disk_size = number
+    name          = string
+    memory        = number
+    id            = number
+    cores         = number
+    disk_size     = number
+    template_name = string
+    tags          = list(string)
   })
 }

@@ -7,5 +7,7 @@ module "testing" {
   vm_id             = var.testing.id
   cores             = var.testing.cores
   disk_size         = var.testing.disk_size
+  template_name     = var.testing.template_name
+  tags              = var.testing.tags
   password          = var.password
 }

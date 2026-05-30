@@ -1,10 +1,11 @@
 # https://registry.terraform.io/providers/bpg/proxmox/latest/docs/guides/clone-vm
-resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
-  description = "Managed by proxmox"
+resource "proxmox_virtual_environment_vm" "vm_clone" {
+  description = var.description
   name        = var.vm_name
   node_name   = var.proxmox_node_name
   vm_id       = var.vm_id
   on_boot     = var.on_boot
+  tags        = var.tags
   started     = var.started
 
   cpu {
@@ -25,18 +26,18 @@ resource "proxmox_virtual_environment_vm" "ubuntu_clone" {
     dedicated = var.memory
   }
 
-    disk {
+  disk {
     datastore_id = var.datastore_id
-    interface    = "virtio0"
+    interface    = var.disk_interface
     size         = var.disk_size
-    file_format  = "raw"
-    discard      = "on"
-    ssd          = true
+    file_format  = var.disk_file_format
+    discard      = var.disk_discard
+    ssd          = var.disk_ssd
   }
 
   initialization {
     dns {
-      servers = ["10.69.69.1"]
+      servers = var.dns_servers
     }
     ip_config {
       ipv4 {
