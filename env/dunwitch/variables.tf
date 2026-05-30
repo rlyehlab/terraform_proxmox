@@ -29,13 +29,3 @@ variable "testing" {
     disk_size = number
   })
 }
-
-variable "calacuta" {
-  type = object({
-    name      = string
-    memory    = number
-    id        = number
-    cores     = number
-    disk_size = number
-  })
-}

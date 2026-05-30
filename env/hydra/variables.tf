@@ -28,5 +28,6 @@ variable "testing" {
     cores         = number
     disk_size     = number
     template_name = string
+    tags          = list(string)
   })
 }

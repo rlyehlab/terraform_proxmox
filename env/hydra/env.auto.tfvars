@@ -2,9 +2,10 @@
 
 testing = {
   name          = "Testing"
-  memory        = 2096
+  memory        = 2048
   id            = 201
   cores         = 2
   disk_size     = 16
-  template_name = "ubuntu"
+  template_name = "debian"
+  tags          = ["terraform", "debian", "testing"]
 }
