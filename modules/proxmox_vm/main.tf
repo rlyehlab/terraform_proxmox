@@ -7,14 +7,15 @@ resource "proxmox_virtual_environment_vm" "vm_clone" {
   on_boot     = var.on_boot
   tags        = var.tags
   started     = var.started
+  stop_on_destroy = true
 
   cpu {
     cores = var.cores
   }
   
-  stop_on_destroy = true
   agent {
     enabled = true
+    timeout = "15m"
   }
 
   clone {
@@ -44,5 +45,10 @@ resource "proxmox_virtual_environment_vm" "vm_clone" {
         address = "dhcp"
       }
     }
+    user_account {
+      username = var.vm_user
+      keys     = var.ssh_keys
+    }
   }
 }
+

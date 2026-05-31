@@ -29,5 +29,7 @@ variable "testing" {
     disk_size     = number
     template_name = string
     tags          = list(string)
+    vm_user       = string
+    ssh_keys      = list(string)
   })
 }

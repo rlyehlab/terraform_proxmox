@@ -38,7 +38,25 @@ pveum user token add tf@pve caripa-token --privsep 0
 
 ## Cloud Init
 
-We use cloud-init to handle VM initialization — SSH keys, user/password, disk mounts, etc. You need a cloud-init enabled template VM on Proxmox before running Terraform. [This tutorial](https://github.com/UntouchedWagons/Ubuntu-CloudInit-Docs) covers the Ubuntu setup.
+We use cloud-init to handle VM initialization — SSH keys, user accounts, disk mounts, etc. You need a cloud-init enabled template VM on Proxmox before running Terraform. [This tutorial](https://github.com/UntouchedWagons/Ubuntu-CloudInit-Docs) covers the Ubuntu setup.
+
+### VM User & SSH Access
+
+Users and SSH keys are provisioned at VM creation time via cloud-init — nothing is hardcoded in the template. This makes it easy to rotate team access without rebuilding templates.
+
+Set these in your `env.auto.tfvars`:
+
+```hcl
+vm_user  = "admin"
+ssh_keys = [
+  "ssh-ed25519 AAAA... alice@laptop",
+  "ssh-ed25519 AAAA... bob@laptop",
+]
+```
+
+When someone joins or leaves the team, update `ssh_keys` and reprovision the affected VMs.
+
+> SSH keys go in `env.auto.tfvars`, not `env.secrets.auto.tfvars` — they are not secrets. Only tokens and passwords belong in the secrets file.
 
 ## Usage
 

@@ -127,3 +127,13 @@ variable "started" {
   type        = bool
   default     = true
 }
+
+variable "vm_user" {
+  type    = string
+  default = "admin"
+}
+
+variable "ssh_keys" {
+  type    = list(string)
+  default = []
+}

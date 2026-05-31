@@ -10,4 +10,6 @@ module "testing" {
   template_name     = var.testing.template_name
   tags              = var.testing.tags
   password          = var.password
+  vm_user           = var.testing.vm_user
+  ssh_keys          = var.testing.ssh_keys
 }

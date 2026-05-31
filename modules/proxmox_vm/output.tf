@@ -1,5 +1,5 @@
 output "vm_ipv4_address" {
   description = "Primary IPv4 address assigned to the VM via DHCP"
-  value       = proxmox_virtual_environment_vm.vm_clone.ipv4_addresses[1][0]
+  value = length(proxmox_virtual_environment_vm.vm_clone.ipv4_addresses) > 1 ? proxmox_virtual_environment_vm.vm_clone.ipv4_addresses[1][0] : "IP not yet available"
 }
 
