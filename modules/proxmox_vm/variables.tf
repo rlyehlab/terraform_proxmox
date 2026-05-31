@@ -85,6 +85,7 @@ variable "template_map" {
   default = {
     ubuntu = 6009
     debian = 6010
+    alpine = 6011
   }
 }
 
