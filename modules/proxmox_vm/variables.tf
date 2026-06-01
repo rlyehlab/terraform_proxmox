@@ -46,7 +46,7 @@ variable "cores" {
 variable "datastore_id" {
   description = "Proxmox datastore where the disk will be created"
   type        = string
-  default     = "local-lvm"
+  default     = "tank"
 }
 
 variable "disk_size" {
@@ -86,6 +86,7 @@ variable "template_map" {
     ubuntu = 6009
     debian = 6010
     alpine = 6011
+    fedora = 6012
   }
 }
 
