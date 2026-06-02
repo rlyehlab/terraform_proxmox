@@ -27,13 +27,16 @@ resource "proxmox_virtual_environment_vm" "vm_clone" {
     dedicated = var.memory
   }
 
-  disk {
-    datastore_id = var.datastore_id
-    interface    = var.disk_interface
-    size         = var.disk_size
-    file_format  = var.disk_file_format
-    discard      = var.disk_discard
-    ssd          = var.disk_ssd
+  dynamic "disk" {
+    for_each = var.disk_size != null ? [1] : []
+    content {
+      datastore_id = var.datastore_id
+      interface    = var.disk_interface
+      size         = var.disk_size
+      file_format  = var.disk_file_format
+      discard      = var.disk_discard
+      ssd          = var.disk_ssd
+    }
   }
 
   initialization {

@@ -50,15 +50,15 @@ variable "datastore_id" {
 }
 
 variable "disk_size" {
-  description = "Disk size in GB"
+  description = "Grow the root disk to this size in GB (null = use template disk as-is, must be >= template disk size)"
   type        = number
-  default     = 16
+  default     = null
 }
 
 variable "disk_interface" {
-  description = "Disk interface (e.g. virtio0, scsi0)"
+  description = "Disk interface of the root disk to resize (e.g. scsi0, virtio0)"
   type        = string
-  default     = "virtio0"
+  default     = "scsi0"
 }
 
 variable "disk_file_format" {

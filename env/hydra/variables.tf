@@ -40,7 +40,7 @@ variable "pad" {
     memory        = number
     id            = number
     cores         = number
-    disk_size     = number
+    disk_size     = optional(number)
     template_name = string
     tags          = list(string)
     vm_user       = string
