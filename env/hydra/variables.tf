@@ -20,7 +20,21 @@ variable "node_name" {
   default     = "hydra"
 }
 
-variable "testing" {
+# variable "testing" {
+#   type = object({
+#     name          = string
+#     memory        = number
+#     id            = number
+#     cores         = number
+#     disk_size     = number
+#     template_name = string
+#     tags          = list(string)
+#     vm_user       = string
+#     ssh_keys      = list(string)
+#   })
+# }
+
+variable "pad" {
   type = object({
     name          = string
     memory        = number
