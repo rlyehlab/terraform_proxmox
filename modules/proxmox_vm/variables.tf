@@ -83,7 +83,7 @@ variable "template_map" {
   description = "Map of template names to their Proxmox VM IDs"
   type        = map(number)
   default = {
-    ubuntu = 6009
+    ubuntu = 6008
     debian = 6010
     alpine = 6011
     fedora = 6012

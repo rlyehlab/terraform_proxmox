@@ -29,3 +29,35 @@ module "pad" {
   vm_user           = var.pad.vm_user
   ssh_keys          = var.pad.ssh_keys
 }
+
+module "wiki" {
+  source = "../../modules/proxmox_vm"
+
+  proxmox_node_name = var.node_name
+  password          = var.password
+  vm_name           = var.wiki.name
+  memory            = var.wiki.memory
+  vm_id             = var.wiki.id
+  cores             = var.wiki.cores
+  disk_size         = var.wiki.disk_size
+  template_name     = var.wiki.template_name
+  tags              = var.wiki.tags
+  vm_user           = var.wiki.vm_user
+  ssh_keys          = var.wiki.ssh_keys
+}
+
+module "nextcloud" {
+  source = "../../modules/proxmox_vm"
+
+  proxmox_node_name = var.node_name
+  password          = var.password
+  vm_name           = var.nextcloud.name
+  memory            = var.nextcloud.memory
+  vm_id             = var.nextcloud.id
+  cores             = var.nextcloud.cores
+  disk_size         = var.nextcloud.disk_size
+  template_name     = var.nextcloud.template_name
+  tags              = var.nextcloud.tags
+  vm_user           = var.nextcloud.vm_user
+  ssh_keys          = var.nextcloud.ssh_keys
+}
