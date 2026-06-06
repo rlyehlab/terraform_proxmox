@@ -75,3 +75,17 @@ variable "nextcloud" {
     ssh_keys      = list(string)
   })
 }
+
+variable "controller" {
+  type = object({
+    name          = string
+    memory        = number
+    id            = number
+    cores         = number
+    disk_size     = optional(number)
+    template_name = string
+    tags          = list(string)
+    vm_user       = string
+    ssh_keys      = list(string)
+  })
+}

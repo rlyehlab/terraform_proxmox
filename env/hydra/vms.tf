@@ -61,3 +61,19 @@ module "nextcloud" {
   vm_user           = var.nextcloud.vm_user
   ssh_keys          = var.nextcloud.ssh_keys
 }
+
+module "controller" {
+  source = "../../modules/proxmox_vm"
+
+  proxmox_node_name = var.node_name
+  password          = var.password
+  vm_name           = var.controller.name
+  memory            = var.controller.memory
+  vm_id             = var.controller.id
+  cores             = var.controller.cores
+  disk_size         = var.controller.disk_size
+  template_name     = var.controller.template_name
+  tags              = var.controller.tags
+  vm_user           = var.controller.vm_user
+  ssh_keys          = var.controller.ssh_keys
+}
