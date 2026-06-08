@@ -77,3 +77,19 @@ module "controller" {
   vm_user           = var.controller.vm_user
   ssh_keys          = var.controller.ssh_keys
 }
+
+module "grafana" {
+  source = "../../modules/proxmox_vm"
+
+  proxmox_node_name = var.node_name
+  password          = var.password
+  vm_name           = var.grafana.name
+  memory            = var.grafana.memory
+  vm_id             = var.grafana.id
+  cores             = var.grafana.cores
+  disk_size         = var.grafana.disk_size
+  template_name     = var.grafana.template_name
+  tags              = var.grafana.tags
+  vm_user           = var.grafana.vm_user
+  ssh_keys          = var.grafana.ssh_keys
+}

@@ -89,3 +89,17 @@ variable "controller" {
     ssh_keys      = list(string)
   })
 }
+
+variable "grafana" {
+  type = object({
+    name          = string
+    memory        = number
+    id            = number
+    cores         = number
+    disk_size     = optional(number)
+    template_name = string
+    tags          = list(string)
+    vm_user       = string
+    ssh_keys      = list(string)
+  })
+}
