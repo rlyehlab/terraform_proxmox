@@ -1,8 +1,8 @@
-vm_name        = "Datasyn-DuckDB"
+vm_name        = "LiteLLM"
 memory         = 8192
-vm_id          = 119
+vm_id          = 121
 cores          = 4
-disk_size      = 75
+disk_size      = 30
 template_name  = "ubuntu"
 network_bridge = "vmbr2"
 tags           = ["terraform", "ubuntu", "production", "ia"]
