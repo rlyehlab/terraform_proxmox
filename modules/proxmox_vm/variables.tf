@@ -157,3 +157,9 @@ variable "ssh_keys" {
   type    = list(string)
   default = []
 }
+
+variable "network_bridge" {
+  description = "Proxmox bridge for net0 (e.g. vmbr0, vmbr2)"
+  type        = string
+  default     = "vmbr0"
+}

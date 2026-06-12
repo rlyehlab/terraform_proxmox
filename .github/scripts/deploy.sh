@@ -35,10 +35,12 @@ resolve_layer_dir() {
 
 node_secrets_var_file() {
   local layer_dir="$1"
-  local node_dir
+  local node_dir secrets_file
   node_dir="$(dirname "$layer_dir")"
-  if [[ -f "$node_dir/env.secrets.auto.tfvars" ]]; then
-    echo "-var-file=$node_dir/env.secrets.auto.tfvars"
+  secrets_file="${node_dir}/env.secrets.auto.tfvars"
+  if [[ -f "$secrets_file" ]]; then
+    # Absolute path: terraform -chdir resolves -var-file relative to the layer dir.
+    echo "-var-file=$(cd "$node_dir" && pwd)/env.secrets.auto.tfvars"
   fi
 }
 
