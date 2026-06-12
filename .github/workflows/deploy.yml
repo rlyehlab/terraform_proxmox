@@ -1,0 +1,105 @@
+name: Terraform Proxmox Deploy
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - live/**
+      - modules/**
+      - .github/workflows/deploy.yml
+      - .github/scripts/**
+  pull_request:
+    branches: ["main"]
+    paths:
+      - live/**
+      - modules/**
+      - .github/workflows/deploy.yml
+      - .github/scripts/**
+  workflow_dispatch:
+    inputs:
+      layer:
+        description: "Optional VM layer override (e.g. hydra/pad)"
+        required: false
+        default: ""
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  DEPLOY_EXCLUDE_LAYERS: "[]"
+  TF_IN_AUTOMATION: "1"
+
+concurrency:
+  group: terraform-proxmox-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+      layers: ${{ steps.detect.outputs.layers }}
+      base_sha: ${{ steps.detect.outputs.base_sha }}
+      head_sha: ${{ steps.detect.outputs.head_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Detection Script
+        id: detect
+        shell: bash
+        run: |
+          bash .github/scripts/detect-layers.sh \
+            "${{ github.event_name }}" \
+            "${{ github.event.before || '' }}" \
+            "${{ github.sha }}" \
+            '${{ env.DEPLOY_EXCLUDE_LAYERS || '[]' }}' \
+            "${{ github.event.inputs.layer || '' }}"
+
+  terraform:
+    name: TF [${{ matrix.layer }}]
+    needs: changes
+    if: needs.changes.outputs.layers != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        layer: ${{ fromJSON(needs.changes.outputs.layers) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: bash .github/scripts/deploy.sh terraform-init "${{ matrix.layer }}"
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_proxmox_api_url: ${{ secrets.PROXMOX_API_URL }}
+          TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+          TF_VAR_password: ${{ secrets.PROXMOX_PASSWORD }}
+          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+        run: bash .github/scripts/deploy.sh terraform-plan "${{ matrix.layer }}"
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          TF_VAR_proxmox_api_url: ${{ secrets.PROXMOX_API_URL }}
+          TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+          TF_VAR_password: ${{ secrets.PROXMOX_PASSWORD }}
+          TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+        run: bash .github/scripts/deploy.sh terraform-apply "${{ matrix.layer }}"
