@@ -1,0 +1,72 @@
+variable "proxmox_api_url" {
+  description = "URL de la API de Proxmox"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_api_token" {
+  description = "id=secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "password" {
+  description = "VM password"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_ssh_username" {
+  description = "Linux/PAM user for Proxmox SSH (required to upload cloud-init snippets)"
+  type        = string
+  default     = "root"
+}
+
+variable "proxmox_ssh_password" {
+  description = "Password for Proxmox SSH (root@pam). Leave empty to use ssh-agent instead."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "node_name" {
+  description = "Nombre del nodo donde vive la vm"
+  type        = string
+  default     = "dunwitch"
+}
+
+variable "vm_name" {
+  type = string
+}
+
+variable "vm_id" {
+  type = number
+}
+
+variable "memory" {
+  type = number
+}
+
+variable "cores" {
+  type = number
+}
+
+variable "disk_size" {
+  type = number
+}
+
+variable "template_name" {
+  type = string
+}
+
+variable "tags" {
+  type = list(string)
+}
+
+variable "vm_user" {
+  type = string
+}
+
+variable "ssh_keys" {
+  type = list(string)
+}

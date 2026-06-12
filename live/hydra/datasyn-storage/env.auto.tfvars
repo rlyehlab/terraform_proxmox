@@ -1,0 +1,9 @@
+vm_name        = "Datasyn-Storage"
+memory         = 6144
+vm_id          = 120
+cores          = 4
+disk_size      = 100
+template_name  = "ubuntu"
+network_bridge = "vmbr2"
+tags           = ["terraform", "ubuntu", "production", "ia"]
+vm_user        = "user"

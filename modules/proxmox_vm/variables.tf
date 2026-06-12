@@ -49,6 +49,24 @@ variable "datastore_id" {
   default     = "tank"
 }
 
+variable "initialization_datastore_id" {
+  description = "Proxmox datastore for the cloud-init drive (ide2)"
+  type        = string
+  default     = "local-lvm"
+}
+
+variable "cloudinit_snippets_datastore_id" {
+  description = "Proxmox datastore for cloud-init snippet files (must support the snippets content type)"
+  type        = string
+  default     = "local"
+}
+
+variable "use_cloud_init_user_data" {
+  description = "Upload custom cloud-init user-data to force a fresh instance-id and apply SSH keys/password on clone"
+  type        = bool
+  default     = false
+}
+
 variable "disk_size" {
   description = "Grow the root disk to this size in GB (null = use template disk as-is, must be >= template disk size)"
   type        = number
@@ -83,7 +101,7 @@ variable "template_map" {
   description = "Map of template names to their Proxmox VM IDs"
   type        = map(number)
   default = {
-    ubuntu = 6008
+    ubuntu = 6009
     debian = 6010
     alpine = 6011
     fedora = 6012
@@ -138,4 +156,10 @@ variable "vm_user" {
 variable "ssh_keys" {
   type    = list(string)
   default = []
+}
+
+variable "network_bridge" {
+  description = "Proxmox bridge for net0 (e.g. vmbr0, vmbr2)"
+  type        = string
+  default     = "vmbr0"
 }
