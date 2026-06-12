@@ -148,12 +148,8 @@ No commitear secrets. Usar placeholders en los ejemplos.
 
 ---
 
-## Infraestructura
-
-![Diagrama de infraestructura](docs/architecture.svg)
-
 ### Flujo
-
+0. Un **developer** crea un layer (`live/<node>/<vm>/`), aca se puede crear la VM, mediante el IDE (Con una skill)
 1. Un **developer** o **GitHub Actions** ejecuta Terraform para un layer (`live/<node>/<vm>/`).
 2. El layer carga los **secrets del node** desde `live/<node>/env.secrets.auto.tfvars`.
 3. Terraform lee/escribe el **remote state** en `s3://rlab-tfstate/proxmox/<node>/<vm>/terraform.tfstate`.
