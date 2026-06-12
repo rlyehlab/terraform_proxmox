@@ -1,8 +1,8 @@
-vm_name        = "Datasyn-DuckDB"
-memory         = 8192
-vm_id          = 119
-cores          = 4
-disk_size      = 75
+vm_name        = "Image-Registry"
+memory         = 4096
+vm_id          = 123
+cores          = 2
+disk_size      = 30
 template_name  = "ubuntu"
 network_bridge = "vmbr2"
 tags           = ["terraform", "ubuntu", "production", "ia"]

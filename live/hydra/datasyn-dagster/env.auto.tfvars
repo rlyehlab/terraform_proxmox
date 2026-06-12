@@ -1,6 +1,6 @@
-vm_name        = "Datasyn-DuckDB"
-memory         = 8192
-vm_id          = 119
+vm_name        = "Datasyn-Dagster"
+memory         = 6144
+vm_id          = 122
 cores          = 4
 disk_size      = 75
 template_name  = "ubuntu"

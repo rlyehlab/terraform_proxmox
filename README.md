@@ -1,264 +1,256 @@
-# 🖥️ Terraform Proxmox
+# Terraform Proxmox
 
-> Infrastructure-as-code for Proxmox VMs — one Terraform state per VM, shared module, S3 remote backend, and git-diff driven CI/CD.
+Infrastructure-as-code for virtual machines on [Proxmox VE](https://www.proxmox.com/). Each VM is a separate Terraform root with its own remote state, a shared reusable module, and CI that only plans/applies what changed in git.
 
-![Architecture diagram](docs/architecture.svg)
-
-## 🧭 At a Glance
-
-| Concept | Description |
-|---|---|
-| **Layer** | One VM = one Terraform root under `live/<node>/<vm>/` |
-| **Module** | `modules/proxmox_vm` — clone, cloud-init, disk resize |
-| **State** | Shared bucket `rlab-tfstate`, unique S3 key per VM |
-| **CI** | GitHub Actions plans/applies only changed VMs |
-| **Secrets** | Node-level `env.secrets.auto.tfvars` (not committed) |
-
-**Proxmox nodes today**
-
-| Node | VMs | State keys |
-|---|---|---|
-| `hydra` | pad, wiki, nextcloud, controller, grafana, datasyn-agent | `proxmox/hydra/<vm>/terraform.tfstate` |
-| `dunwitch` | testing | `proxmox/dunwitch/testing/terraform.tfstate` |
+![Infrastructure diagram](docs/architecture.svg)
 
 ---
 
-## 📁 Repository Layout
+## What is this repository?
 
-```
-terraform_proxmox-1/
-├── docs/
-│   └── architecture.svg          # 📊 Architecture diagram (this repo)
-├── live/                         # 🌍 Terraform roots — one per VM
-│   ├── hydra/
-│   │   ├── pad/
-│   │   ├── wiki/
-│   │   ├── nextcloud/
-│   │   ├── controller/
-│   │   ├── grafana/
-│   │   ├── datasyn-agent/
-│   │   └── env.secrets.auto.tfvars.example
-│   └── dunwitch/
-│       ├── testing/
-│       └── env.secrets.auto.tfvars.example
-├── modules/
-│   └── proxmox_vm/               # 🧩 Reusable VM module
-├── .github/
-│   ├── scripts/
-│   │   ├── deploy.sh             # init · plan · apply · detect-layers
-│   │   └── detect-layers.sh      # git-diff → CI matrix
-│   └── workflows/
-│       └── deploy.yml            # PR plan · main apply
-├── scripts/
-│   └── migrate-state.sh          # 🔀 Split legacy monolithic state
-└── create_template/              # 🛠️ Manual Proxmox template builder
+This repo manages **Proxmox VMs as code**. It does not install application software inside VMs — it provisions the machines (CPU, RAM, disk, network, cloud-init, SSH keys).
+
+| Concept | Meaning |
+|---------|---------|
+| **Layer** | One VM = one folder under `live/<node>/<vm>/` |
+| **Node** | A Proxmox host (e.g. `hydra`, `dunwitch`) |
+| **Module** | `modules/proxmox_vm` — clone template, resize disk, cloud-init |
+| **State** | S3 bucket `rlab-tfstate`, one key per VM |
+| **Secrets** | Node file `live/<node>/env.secrets.auto.tfvars` (not committed) |
+| **Config** | Per-VM `env.auto.tfvars` (name, vm_id, cores, disk, …) |
+
+**Why one state per VM?** Changing one service only plans/applies that VM. Module changes still roll out to all VMs (shared code).
+
+---
+
+## Initial setup
+
+Do this once before your first local deploy.
+
+### 1. Install local tools
+
+See [Local requirements](#local-requirements) below, or use the [setup prompt](#setup-prompt-for-ai-assistant) to install everything on a fresh machine.
+
+### 2. Clone the repository
+
+```bash
+git clone https://github.com/rlyehlab/terraform_proxmox.git
+cd terraform_proxmox
 ```
 
-Each VM layer contains:
+### 3. Configure AWS (S3 backend)
 
-| File | Role |
-|---|---|
-| `main.tf` | Calls `module "vm"` |
-| `providers.tf` | Proxmox provider + partial S3 backend |
-| `backend.hcl` | Bucket + **unique** state key |
-| `variables.tf` | Provider + VM inputs |
-| `env.auto.tfvars` | VM config (name, id, ssh_keys, …) |
+Terraform stores state in `s3://rlab-tfstate`. Your AWS credentials need read/write access to that bucket.
 
----
-
-## 🏗️ Architecture
-
-### Data flow
-
-1. **Developer** or **GitHub Actions** runs Terraform against a single VM layer (e.g. `live/hydra/pad/`).
-2. The layer reads **node secrets** from `live/hydra/env.secrets.auto.tfvars` (local or via `TF_VAR_*` in CI).
-3. Terraform loads **remote state** from `s3://rlab-tfstate/proxmox/hydra/pad/terraform.tfstate`.
-4. The shared **`modules/proxmox_vm`** module talks to the Proxmox API and clones a template VM.
-5. **Cloud-init** provisions users, SSH keys, and optional custom snippets (datasyn-agent).
-
-See the full visual overview: **[docs/architecture.svg](docs/architecture.svg)**
-
-### Why one state per VM?
-
-| Before (`env/hydra`) | After (`live/hydra/<vm>`) |
-|---|---|
-| 1 `apply` touched all 6 VMs | Change grafana → only grafana plans |
-| Large blast radius | Independent lifecycle per service |
-| Slow plans | Targeted CI matrix |
-
----
-
-## ✅ Prerequisites
-
-- 🧱 **Terraform** >= 1.5
-- ☁️ **AWS CLI** configured (S3 backend access)
-- 🔑 **SSH agent** with `tf` key (for cloud-init snippet uploads)
-- 🖧 **Proxmox** API token + `tf@pve` user (see setup below)
-
----
-
-## 🔧 Proxmox Setup (one-time)
-
-SSH into the Proxmox node:
-
-```zsh
-# 1️⃣ Create provisioner role
-pveum role add Provisioner -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.PowerMgmt SDN.Use"
-
-# 2️⃣ Create Terraform user
-pveum user add tf@pve --password <password>
-pveum aclmod / -user tf@pve -role Provisioner
-
-# 3️⃣ Generate API token (no privilege separation)
-pveum user token add tf@pve caripa-token --privsep 0
+```bash
+aws configure
+# or export AWS_PROFILE / AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+aws sts get-caller-identity   # verify access
 ```
 
----
+### 4. Configure Proxmox secrets (per node)
 
-## ☁️ Cloud-Init
+```bash
+cp live/hydra/env.secrets.auto.tfvars.example live/hydra/env.secrets.auto.tfvars
+```
 
-Cloud-init handles VM bootstrap: SSH keys, users, DNS, disk config. You need a **cloud-init enabled template** on Proxmox before running Terraform.
-
-📖 Ubuntu guide: [Ubuntu-CloudInit-Docs](https://github.com/UntouchedWagons/Ubuntu-CloudInit-Docs)
-
-### 👤 VM users & SSH keys
-
-Set per-VM values in `env.auto.tfvars`:
+Edit `live/hydra/env.secrets.auto.tfvars`:
 
 ```hcl
-vm_user  = "admin"
-ssh_keys = [
-  "ssh-ed25519 AAAA... alice@laptop",
-  "ssh-ed25519 AAAA... bob@laptop",
-]
+proxmox_api_url      = "https://<proxmox-host>:8006"
+proxmox_api_token    = "tf@pve!token-name=<secret>"
+password             = "<tf@pve password>"
+proxmox_ssh_password = ""   # leave empty if using ssh-agent for root@proxmox
 ```
 
-> ⚠️ **Important:** SSH keys live in `env.auto.tfvars` (committed). Only tokens and passwords go in secrets files.
+Repeat for other nodes (`live/dunwitch/`, …) when you deploy there.
 
-### 🤖 datasyn-agent (custom cloud-init)
+### 5. Proxmox one-time setup (on the node)
 
-Requires:
+Run on the Proxmox host via SSH:
 
-1. `Datastore.Allocate` on the Provisioner role
-2. `proxmox_ssh_password` in `live/hydra/env.secrets.auto.tfvars` **or** SSH agent with `root@<proxmox-host>` access
+```bash
+# Provisioner role
+pveum role add Provisioner -privs "Datastore.Allocate Datastore.AllocateSpace Datastore.AllocateTemplate Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.PowerMgmt SDN.Use"
 
-Uses template VM **6013** and uploads a custom `#cloud-config` snippet.
-
----
-
-## 🚀 Usage
-
-### 1️⃣ Configure secrets (once per node)
-
-```zsh
-cp live/hydra/env.secrets.auto.tfvars.example live/hydra/env.secrets.auto.tfvars
-# Edit: proxmox_api_url, proxmox_api_token, password, proxmox_ssh_password
+# Terraform API user
+pveum user add tf@pve --password '<password>'
+pveum aclmod / -user tf@pve -role Provisioner
+pveum user token add tf@pve terraform-token --privsep 0
 ```
 
-### 2️⃣ Deploy a single VM
+Cloud-init **templates** must exist on Proxmox before cloning VMs. Build them with `create_template/ubuntu/create-template.sh` if missing.
 
-**Option A — deploy helper (recommended)**
+### 6. Deploy a VM
 
-```zsh
+```bash
 bash .github/scripts/deploy.sh terraform-init  hydra/pad
 bash .github/scripts/deploy.sh terraform-plan  hydra/pad
 bash .github/scripts/deploy.sh terraform-apply hydra/pad
 ```
 
-**Option B — raw Terraform**
-
-```zsh
-cd live/hydra/pad
-terraform init -backend-config=backend.hcl
-terraform plan  -var-file=../env.secrets.auto.tfvars -out=plan.tfplan
-terraform apply plan.tfplan
-```
-
-### 3️⃣ Detect which VMs changed
-
-```zsh
-bash .github/scripts/deploy.sh detect-layers HEAD~1 HEAD
-```
-
-Example output:
-
-```json
-["hydra/pad"]
-```
-
-### 🔍 Change detection rules
-
-| What changed | VMs deployed |
-|---|---|
-| `modules/proxmox_vm/**` | ⚡ **All VMs** (module blast radius) |
-| `live/hydra/pad/**` | `hydra/pad` only |
-| `live/hydra/env.secrets.auto.tfvars` | All VMs on **hydra** |
-| `live/dunwitch/testing/**` | `dunwitch/testing` only |
-| Invalid git SHAs | All VMs (safe default) |
-
-Pattern inspired by [ubika-infra](https://github.com/ubika/ubika-infra).
+Replace `hydra/pad` with any layer under `live/` that has a `main.tf`.
 
 ---
 
-## 🤖 CI/CD
+## Local requirements
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [Terraform](https://developer.hashicorp.com/terraform/install) | >= 1.5 | Plan and apply infrastructure |
+| [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) | v2 | S3 remote state authentication |
+| [Git](https://git-scm.com/) | any recent | Clone repo, CI change detection |
+| [jq](https://jqlang.github.io/jq/) | any | `detect-layers` JSON output |
+| SSH client + agent | — | Optional: upload cloud-init snippets to Proxmox as `root` |
+
+**Access you need**
+
+- AWS credentials with access to bucket `rlab-tfstate` (region `us-east-1`)
+- Proxmox API token for user `tf@pve`
+- Network reachability to Proxmox API (`https://<host>:8006`)
+- SSH key matching a public key in the VM layer (`env.auto.tfvars` or `locals.tf`)
+
+**Verify**
+
+```bash
+terraform version
+aws --version
+aws sts get-caller-identity
+```
+
+---
+
+## Setup prompt (for AI assistant)
+
+Copy the block below into Cursor, ChatGPT, or another assistant on a **new machine** to install prerequisites and validate the environment for this project:
+
+```text
+I need to run the Terraform Proxmox repo locally on macOS (or Linux). Help me install and verify everything.
+
+Project context:
+- Repo: terraform_proxmox — one Terraform root per VM under live/<node>/<vm>/
+- Remote state: AWS S3 bucket rlab-tfstate, region us-east-1
+- Tools used: Terraform >= 1.5, AWS CLI v2, git, jq, bash
+- Deploy helper: bash .github/scripts/deploy.sh terraform-init|plan|apply <node>/<vm>
+- Secrets file (not in git): live/hydra/env.secrets.auto.tfvars with proxmox_api_url, proxmox_api_token, password, optional proxmox_ssh_password
+
+Please:
+1. Detect my OS and package manager (Homebrew on macOS, apt/dnf on Linux).
+2. Install Terraform (>= 1.5), AWS CLI v2, git, and jq if missing.
+3. Show how to configure AWS credentials (aws configure or env vars) and verify with aws sts get-caller-identity.
+4. Show how to clone the repo and copy live/hydra/env.secrets.auto.tfvars.example to env.secrets.auto.tfvars.
+5. Run terraform version and a dry terraform init for one layer, e.g. hydra/pad, using:
+   bash .github/scripts/deploy.sh terraform-init hydra/pad
+6. List anything still missing (Proxmox token, VPN, SSH agent) that I must provide manually.
+
+Do not commit secrets. Use placeholders in examples.
+```
+
+---
+
+## Infrastructure
+
+![Infrastructure diagram](docs/architecture.svg)
+
+### Flow
+
+1. **Developer** or **GitHub Actions** runs Terraform for one layer (`live/<node>/<vm>/`).
+2. Layer loads **node secrets** from `live/<node>/env.secrets.auto.tfvars`.
+3. Terraform reads/writes **remote state** at `s3://rlab-tfstate/proxmox/<node>/<vm>/terraform.tfstate`.
+4. Shared module **`modules/proxmox_vm`** calls the Proxmox API, full-clones a template, applies cloud-init.
+5. VM boots with configured user, SSH keys, disk, and network bridge.
+
+### Repository layout
+
+```
+terraform_proxmox/
+├── live/<node>/<vm>/     # One Terraform root per VM
+│   ├── main.tf           # module "vm" { ... }
+│   ├── backend.hcl       # Unique S3 state key
+│   ├── env.auto.tfvars   # VM sizing, vm_id, tags
+│   └── providers.tf
+├── live/<node>/env.secrets.auto.tfvars   # gitignored
+├── modules/proxmox_vm/   # Shared VM module
+├── .github/scripts/deploy.sh
+└── create_template/      # Build cloud-init templates on Proxmox
+```
+
+### Proxmox nodes
+
+| Node | Layers | State key pattern |
+|------|--------|-------------------|
+| `hydra` | Multiple VMs under `live/hydra/*/` | `proxmox/hydra/<vm>/terraform.tfstate` |
+| `dunwitch` | `testing` | `proxmox/dunwitch/testing/terraform.tfstate` |
+
+---
+
+## Day-to-day usage
+
+### Plan / apply one VM
+
+```bash
+bash .github/scripts/deploy.sh terraform-init  hydra/grafana
+bash .github/scripts/deploy.sh terraform-plan  hydra/grafana
+bash .github/scripts/deploy.sh terraform-apply hydra/grafana
+```
+
+### See which layers changed (CI logic)
+
+```bash
+bash .github/scripts/deploy.sh detect-layers HEAD~1 HEAD
+```
+
+| Change | Effect |
+|--------|--------|
+| `modules/proxmox_vm/**` | All VMs planned in CI |
+| `live/hydra/<vm>/**` | That VM only |
+| `live/hydra/env.secrets.auto.tfvars` | All VMs on `hydra` |
+
+### SSH into a new VM
+
+User is `vm_user` from `env.auto.tfvars` (usually `user`), not `root`.
+
+```bash
+# On Proxmox
+qm guest cmd <vm_id> network-get-interfaces
+
+# From your laptop (key must match layer ssh_keys / locals.tf)
+ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes user@<vm-ip>
+```
+
+---
+
+## CI/CD
 
 Workflow: `.github/workflows/deploy.yml`
 
 | Event | Action |
-|---|---|
-| 📬 Pull request | `terraform plan` on changed VMs |
-| 🚀 Push to `main` | `terraform apply` on changed VMs |
-| 🎯 `workflow_dispatch` | Deploy one VM via `layer` input (e.g. `hydra/pad`) |
+|-------|--------|
+| Pull request | `terraform plan` on changed layers |
+| Push to `main` | `terraform apply` on changed layers |
+| `workflow_dispatch` | Deploy one layer via input `layer` |
 
-### Required GitHub secrets
-
-| Secret | Purpose |
-|---|---|
-| `AWS_ROLE_ARN` | OIDC → S3 backend |
-| `PROXMOX_API_URL` | Proxmox API endpoint |
-| `PROXMOX_API_TOKEN` | Token (`id=secret`) |
-| `PROXMOX_PASSWORD` | `tf@pve` password |
-| `PROXMOX_SSH_PASSWORD` | Root SSH for snippet uploads |
-
-> 💡 Deploys run with `max-parallel: 1` to avoid Proxmox API races on the same node.
+GitHub secrets: `AWS_ROLE_ARN`, `PROXMOX_API_URL`, `PROXMOX_API_TOKEN`, `PROXMOX_PASSWORD`, `PROXMOX_SSH_PASSWORD`.
 
 ---
 
-## 🔀 State Migration
+## Adding a new VM
 
-If you still have a legacy monolithic state at `proxmox/hydra/terraform.tfstate`:
+Use the Cursor skill at `.cursor/skills/create-vm/SKILL.md`, or copy an existing layer:
 
-```zsh
-./scripts/migrate-state.sh hydra pad hydra/pad
-./scripts/migrate-state.sh hydra wiki hydra/wiki
-# … repeat for each VM
+```bash
+cp -R live/hydra/pad live/hydra/my-service
+# Edit backend.hcl (unique state key), env.auto.tfvars (vm_id, disk, …)
+bash .github/scripts/deploy.sh terraform-init  hydra/my-service
+bash .github/scripts/deploy.sh terraform-plan  hydra/my-service
 ```
 
-Manual alternative:
-
-```zsh
-cd live/hydra/pad
-terraform init -backend-config=backend.hcl
-terraform state mv 'module.pad.proxmox_virtual_environment_vm.vm_clone' \
-                   'module.vm.proxmox_virtual_environment_vm.vm_clone'
-```
-
-Remove each VM from the old root until the legacy state is empty.
+Pick a free `vm_id` on the target node (`qm list` on Proxmox).
 
 ---
 
-## 💥 Nuclear Option
+## References
 
-Destroy a VM directly on Proxmox (bypasses Terraform):
-
-```zsh
-qm destroy <vm-id>
-```
-
----
-
-## 📚 References
-
-- [Create a Proxmox Ubuntu cloud-init image](https://austinsnerdythings.com/2021/08/30/how-to-create-a-proxmox-ubuntu-cloud-init-image/)
+- [bpg/proxmox Terraform provider](https://registry.terraform.io/providers/bpg/proxmox/latest/docs)
+- [Proxmox cloud-init Ubuntu image](https://austinsnerdythings.com/2021/08/30/how-to-create-a-proxmox-ubuntu-cloud-init-image/)
 - [Deploy VMs in Proxmox with Terraform](https://austinsnerdythings.com/2021/09/01/how-to-deploy-vms-in-proxmox-with-terraform/)
-- [bpg/proxmox provider](https://registry.terraform.io/providers/bpg/proxmox/latest/docs)
