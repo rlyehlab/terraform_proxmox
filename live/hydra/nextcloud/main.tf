@@ -12,4 +12,18 @@ module "vm" {
   tags              = var.tags
   vm_user           = var.vm_user
   ssh_keys          = var.ssh_keys
+  ipv4_address      = var.ipv4_address
+  ipv4_gateway      = var.ipv4_gateway
+  network_bridge    = var.network_bridge
+
+  # Nextcloud was provisioned with UEFI + custom vendor cloud-init (not a plain template clone).
+  bios                  = "ovmf"
+  machine               = "q35"
+  enable_efi_disk       = true
+  efi_disk_datastore_id = "local-lvm"
+  vendor_data_file_id   = "local:snippets/ubuntu-noble.yaml"
+  datastore_id          = "local-lvm"
+  disk_interface        = "virtio0"
+  disk_ssd              = false
+  agent_enabled         = var.agent_enabled
 }

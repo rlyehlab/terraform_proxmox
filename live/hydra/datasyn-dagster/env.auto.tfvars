@@ -1,9 +1,11 @@
 vm_name        = "Datasyn-Dagster"
 memory         = 6144
 vm_id          = 122
+network_bridge = "vmbr1"
+ipv4_address   = "10.13.10.122/24"
+ipv4_gateway   = "10.13.10.1"
 cores          = 4
 disk_size      = 75
 template_name  = "ubuntu"
-network_bridge = "vmbr2"
 tags           = ["terraform", "ubuntu", "production", "ia"]
 vm_user        = "user"

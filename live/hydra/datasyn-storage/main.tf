@@ -15,4 +15,6 @@ module "vm" {
   vm_user                  = var.vm_user
   ssh_keys                 = local.ssh_keys
   use_cloud_init_user_data = var.use_cloud_init_user_data
+  ipv4_address             = var.ipv4_address
+  ipv4_gateway             = var.ipv4_gateway
 }

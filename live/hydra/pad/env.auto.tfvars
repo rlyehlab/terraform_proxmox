@@ -1,6 +1,9 @@
 vm_name       = "Pad"
 memory        = 2048
-vm_id         = 110
+vm_id          = 110
+network_bridge = "vmbr1"
+ipv4_address   = "10.13.10.101/24"
+ipv4_gateway   = "10.13.10.1"
 cores         = 2
 template_name = "debian"
 tags          = ["terraform", "debian", "production"]

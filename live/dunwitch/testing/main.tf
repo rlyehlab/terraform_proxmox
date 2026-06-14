@@ -12,4 +12,6 @@ module "vm" {
   tags              = var.tags
   vm_user           = var.vm_user
   ssh_keys          = var.ssh_keys
+  ipv4_address      = var.ipv4_address
+  ipv4_gateway      = var.ipv4_gateway
 }

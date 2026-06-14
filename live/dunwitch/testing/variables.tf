@@ -70,3 +70,15 @@ variable "vm_user" {
 variable "ssh_keys" {
   type = list(string)
 }
+
+variable "ipv4_address" {
+  description = "IPv4 in CIDR notation or \"dhcp\""
+  type        = string
+  default     = "dhcp"
+}
+
+variable "ipv4_gateway" {
+  description = "IPv4 gateway; required when ipv4_address is static"
+  type        = string
+  default     = null
+}

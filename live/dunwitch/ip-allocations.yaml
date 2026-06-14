@@ -1,0 +1,7 @@
+# Static IPv4 registry for dunwitch (10.69.69.0/24, gateway 10.69.69.1)
+
+subnet: 10.69.69.0/24
+gateway: 10.69.69.1
+
+vmbr0:
+  201: testing

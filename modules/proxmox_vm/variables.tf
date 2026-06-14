@@ -163,3 +163,61 @@ variable "network_bridge" {
   type        = string
   default     = "vmbr0"
 }
+
+variable "ipv4_address" {
+  description = "IPv4 in CIDR notation (e.g. 10.69.69.50/24) or \"dhcp\""
+  type        = string
+  default     = "dhcp"
+
+  validation {
+    condition     = var.ipv4_address == "dhcp" || can(regex("^\\d+\\.\\d+\\.\\d+\\.\\d+/\\d+$", var.ipv4_address))
+    error_message = "ipv4_address must be \"dhcp\" or a CIDR address (e.g. 10.69.69.50/24)."
+  }
+}
+
+variable "ipv4_gateway" {
+  description = "IPv4 gateway; required when ipv4_address is static; omit for dhcp"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.ipv4_address == "dhcp" || (var.ipv4_gateway != null && var.ipv4_gateway != "")
+    error_message = "ipv4_gateway is required when ipv4_address is not \"dhcp\"."
+  }
+}
+
+variable "bios" {
+  description = "BIOS type (seabios or ovmf for UEFI)"
+  type        = string
+  default     = "seabios"
+}
+
+variable "machine" {
+  description = "Machine type (e.g. q35); null leaves Proxmox default"
+  type        = string
+  default     = null
+}
+
+variable "enable_efi_disk" {
+  description = "Create EFI disk (required for ovmf/UEFI boot)"
+  type        = bool
+  default     = false
+}
+
+variable "efi_disk_datastore_id" {
+  description = "Datastore for EFI disk when enable_efi_disk is true"
+  type        = string
+  default     = "local-lvm"
+}
+
+variable "vendor_data_file_id" {
+  description = "Proxmox cloud-init vendor-data snippet file ID (optional)"
+  type        = string
+  default     = null
+}
+
+variable "agent_enabled" {
+  description = "Enable QEMU guest agent (disable if agent hangs plan/apply refresh)"
+  type        = bool
+  default     = true
+}
