@@ -8,14 +8,25 @@ resource "proxmox_virtual_environment_vm" "vm_clone" {
   tags            = var.tags
   started         = var.started
   stop_on_destroy = true
+  bios            = var.bios
+  machine         = var.machine
 
   cpu {
     cores = var.cores
   }
 
   agent {
-    enabled = true
+    enabled = var.agent_enabled
     timeout = "15m"
+  }
+
+  dynamic "efi_disk" {
+    for_each = var.enable_efi_disk ? [1] : []
+    content {
+      datastore_id = var.efi_disk_datastore_id
+      file_format  = "raw"
+      type         = "2m"
+    }
   }
 
   clone {
@@ -54,9 +65,10 @@ resource "proxmox_virtual_environment_vm" "vm_clone" {
   }
 
   initialization {
-    datastore_id      = var.initialization_datastore_id
-    interface         = "ide2"
-    user_data_file_id = var.use_cloud_init_user_data ? proxmox_virtual_environment_file.cloud_init_user_data[0].id : null
+    datastore_id        = var.initialization_datastore_id
+    interface           = "ide2"
+    user_data_file_id   = var.use_cloud_init_user_data ? proxmox_virtual_environment_file.cloud_init_user_data[0].id : null
+    vendor_data_file_id = var.vendor_data_file_id
 
     dns {
       servers = var.dns_servers
@@ -64,7 +76,8 @@ resource "proxmox_virtual_environment_vm" "vm_clone" {
 
     ip_config {
       ipv4 {
-        address = "dhcp"
+        address = var.ipv4_address
+        gateway = var.ipv4_address != "dhcp" ? var.ipv4_gateway : null
       }
     }
 

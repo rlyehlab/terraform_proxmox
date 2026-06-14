@@ -1,6 +1,9 @@
 vm_name       = "Wiki"
 memory        = 2048
-vm_id         = 111
+vm_id          = 111
+network_bridge = "vmbr1"
+ipv4_address   = "10.13.10.100/24"
+ipv4_gateway   = "10.13.10.1"
 cores         = 2
 template_name = "debian"
 tags          = ["terraform", "debian", "production"]

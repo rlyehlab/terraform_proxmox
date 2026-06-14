@@ -33,7 +33,9 @@ module "my_vm" {
 | `started` | Start VM after creation | `bool` | `true` | no |
 | `tags` | List of tags | `list(string)` | `[]` | no |
 | `dns_servers` | DNS servers | `list(string)` | `["10.69.69.1"]` | no |
-| `description` | VM description | `string` | `"Managed by Terraform"` | no |
+| `ipv4_address` | IPv4 CIDR or `"dhcp"` | `string` | `"dhcp"` | no |
+| `ipv4_gateway` | Gateway (required for static IP) | `string` | `null` | no |
+| `network_bridge` | Proxmox bridge | `string` | `"vmbr0"` | no |
 | `disk_interface` | Disk interface | `string` | `"virtio0"` | no |
 | `disk_file_format` | Disk file format | `string` | `"raw"` | no |
 | `disk_discard` | Disk discard mode | `string` | `"on"` | no |
@@ -43,4 +45,4 @@ module "my_vm" {
 
 | Name | Description |
 |------|-------------|
-| `vm_ipv4_address` | IPv4 address assigned to the VM |
+| `vm_ipv4_address` | IPv4 address (static from config, or from QEMU agent for DHCP) |

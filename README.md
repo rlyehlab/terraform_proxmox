@@ -17,7 +17,7 @@ Este repo gestiona **VMs de Proxmox como código**. No instala software de aplic
 | **Module** | `modules/proxmox_vm` — clone de template, resize de disco, cloud-init |
 | **State** | Bucket S3 `rlab-tfstate`, una key por VM |
 | **Secrets** | Archivo por node: `live/<node>/env.secrets.auto.tfvars` (no se commitea) |
-| **Config** | Por VM: `env.auto.tfvars` (nombre, vm_id, cores, disk, …) |
+| **Config** | Por VM: `env.auto.tfvars` (nombre, vm_id, cores, disk, IP, …) |
 
 **¿Por qué un state por VM?** Al cambiar un servicio solo se hace plan/apply de esa VM. Los cambios en el module siguen desplegándose en todas las VMs (código compartido).
 
@@ -154,7 +154,39 @@ No commitear secrets. Usar placeholders en los ejemplos.
 2. El layer carga los **secrets del node** desde `live/<node>/env.secrets.auto.tfvars`.
 3. Terraform lee/escribe el **remote state** en `s3://rlab-tfstate/proxmox/<node>/<vm>/terraform.tfstate`.
 4. El module compartido **`modules/proxmox_vm`** llama a la API de Proxmox, hace full-clone de un template y aplica cloud-init.
-5. La VM arranca con el usuario, SSH keys, disco y network bridge configurados.
+5. La VM arranca con el usuario, SSH keys, disco, bridge y **IP estática** (cloud-init) configurados.
+
+---
+
+## Red e IP estática
+
+Las VMs reciben IP vía cloud-init en el bloque `initialization.ip_config` del module `proxmox_vm`. Por defecto es `dhcp`; cada layer puede fijar IP estática en `env.auto.tfvars`:
+
+```hcl
+network_bridge = "vmbr1"
+ipv4_address   = "10.13.10.118/24"
+ipv4_gateway   = "10.13.10.1"
+```
+
+| Recurso | Uso |
+|---------|-----|
+| `live/<node>/ip-allocations.yaml` | Registro de IPs y bridges por VM |
+| `modules/proxmox_vm` | `ipv4_address`, `ipv4_gateway`, `dns_servers`, `network_bridge` |
+| Output `vm_ipv4_address` | IP estática configurada, o descubierta por QEMU agent si es DHCP |
+
+**Red en hydra:** todas las VMs usan **`vmbr1`** / **`10.13.10.0/24`** (gateway **`10.13.10.1`**). Ver `live/hydra/ip-allocations.yaml`.
+
+**Migrar VMs existentes de DHCP a estática:** cloud-init solo aplica en el primer arranque. Un `apply` que cambie `ip_config` puede requerir recrear la VM o ajuste manual en el guest. Haz plan primero y revisa si hay `forces replacement`.
+
+**Apply requiere confirmación explícita** — usa `terraform plan` para revisar; el apply no se ejecuta automáticamente en local salvo que lo confirmes:
+
+```bash
+bash .github/scripts/deploy.sh terraform-plan  hydra/pad
+# Revisar el plan, luego:
+bash .github/scripts/deploy.sh terraform-apply hydra/pad
+```
+
+---
 
 ### Layout del repositorio
 
@@ -202,16 +234,16 @@ bash .github/scripts/deploy.sh detect-layers HEAD~1 HEAD
 | `live/hydra/<vm>/**` | Solo esa VM |
 | `live/hydra/env.secrets.auto.tfvars` | Todas las VMs del node `hydra` |
 
-### SSH a una VM nueva
+### SSH a una VM
 
-El usuario es `vm_user` de `env.auto.tfvars` (normalmente `user`), no `root`.
+El usuario es `vm_user` de `env.auto.tfvars` (normalmente `user`), no `root`. Con IP estática, usa la IP de `env.auto.tfvars` o del output `vm_ipv4_address`:
 
 ```bash
-# En Proxmox
-qm guest cmd <vm_id> network-get-interfaces
+# IP estática (desde env.auto.tfvars del layer)
+ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes user@10.13.10.118
 
-# Desde tu laptop (la key debe coincidir con ssh_keys / locals.tf del layer)
-ssh -i ~/.ssh/<key> -o IdentitiesOnly=yes user@<vm-ip>
+# Si aún usas DHCP, consulta en Proxmox:
+qm guest cmd <vm_id> network-get-interfaces
 ```
 
 ---
@@ -236,7 +268,8 @@ Usa el skill de Cursor en `.cursor/skills/create-vm/SKILL.md`, o copia un layer 
 
 ```bash
 cp -R live/hydra/pad live/hydra/my-service
-# Editar backend.hcl (state key única), env.auto.tfvars (vm_id, disk, …)
+# Editar backend.hcl (state key única), env.auto.tfvars (vm_id, IP, disk, …)
+# Registrar la IP en live/hydra/ip-allocations.yaml
 bash .github/scripts/deploy.sh terraform-init  hydra/my-service
 bash .github/scripts/deploy.sh terraform-plan  hydra/my-service
 ```

@@ -1,6 +1,8 @@
 vm_name       = "Testing"
 memory        = 2048
-vm_id         = 201
+vm_id          = 201
+ipv4_address   = "10.69.69.201/24"
+ipv4_gateway   = "10.69.69.1"
 cores         = 2
 disk_size     = 16
 template_name = "debian"

@@ -1,9 +1,11 @@
 vm_name        = "LiteLLM"
 memory         = 8192
 vm_id          = 121
+network_bridge = "vmbr1"
+ipv4_address   = "10.13.10.121/24"
+ipv4_gateway   = "10.13.10.1"
 cores          = 4
 disk_size      = 30
 template_name  = "ubuntu"
-network_bridge = "vmbr2"
 tags           = ["terraform", "ubuntu", "production", "ia"]
 vm_user        = "user"

@@ -1,0 +1,20 @@
+# Static IPv4 registry for hydra — keep in sync with each layer env.auto.tfvars
+# Each VM layer has its own Terraform state; this file avoids duplicate assignments.
+
+vmbr1:
+  subnet: 10.13.10.0/24
+  gateway: 10.13.10.1
+  dns_servers:
+    - 10.69.69.1
+  vms:
+    110: { name: pad,             ip: 10.13.10.101 }
+    111: { name: wiki,            ip: 10.13.10.100 }
+    112: { name: nextcloud,       ip: 10.13.10.102 }
+    113: { name: controller,      ip: 10.13.10.103 }
+    114: { name: grafana,         ip: 10.13.10.104 }
+    118: { name: datasyn-agent,   ip: 10.13.10.118 }
+    119: { name: datasyn-duckdb,  ip: 10.13.10.119 }
+    120: { name: datasyn-storage, ip: 10.13.10.120 }
+    121: { name: litellm,         ip: 10.13.10.121 }
+    122: { name: datasyn-dagster, ip: 10.13.10.122 }
+    123: { name: image-registry,  ip: 10.13.10.123 }

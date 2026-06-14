@@ -68,7 +68,19 @@ variable "template_name" {
 variable "network_bridge" {
   description = "Proxmox bridge for the VM network interface"
   type        = string
-  default     = "vmbr0"
+  default     = "vmbr1"
+}
+
+variable "ipv4_address" {
+  description = "IPv4 in CIDR notation or \"dhcp\""
+  type        = string
+  default     = "dhcp"
+}
+
+variable "ipv4_gateway" {
+  description = "IPv4 gateway; required when ipv4_address is static"
+  type        = string
+  default     = null
 }
 
 variable "tags" {
